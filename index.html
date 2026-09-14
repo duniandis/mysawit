@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Data Bibit Sawit NDIS</title>
+  <meta name="theme-color" content="#ffffff" />
+  <style>
+    :root{
+      --bg:#f5f7f4;
+      --card:#ffffff;
+      --text:#1d2a20;
+      --muted:#66736a;
+      --line:#e3e9e4;
+      --accent:#2e7d32;
+      --accent-soft:#eaf5eb;
+      --danger:#b3261e;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+    .wrap{
+      max-width:680px;
+      margin:0 auto;
+      padding:24px 16px 48px;
+    }
+    .brand{
+      text-align:center;
+      margin-bottom:18px;
+    }
+    .brand h1{
+      margin:0;
+      font-size:24px;
+      letter-spacing:.3px;
+    }
+    .brand p{
+      margin:6px 0 0;
+      color:var(--muted);
+      font-size:14px;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:20px;
+      box-shadow:0 8px 28px rgba(0,0,0,.05);
+    }
+    .id{
+      text-align:center;
+      background:var(--accent-soft);
+      border-radius:14px;
+      padding:14px;
+      margin-bottom:18px;
+    }
+    .id small{
+      display:block;
+      color:var(--muted);
+      margin-bottom:4px;
+    }
+    .id strong{
+      font-size:26px;
+      letter-spacing:1px;
+      color:var(--accent);
+    }
+    .row{
+      display:grid;
+      grid-template-columns:145px 1fr;
+      gap:12px;
+      padding:11px 0;
+      border-bottom:1px solid var(--line);
+    }
+    .row:last-child{border-bottom:0}
+    .label{color:var(--muted)}
+    .value{font-weight:600; word-break:break-word}
+    .status{
+      display:inline-block;
+      padding:5px 10px;
+      border-radius:999px;
+      background:var(--accent-soft);
+      color:var(--accent);
+      font-size:13px;
+      font-weight:700;
+    }
+    .msg{
+      text-align:center;
+      padding:28px 12px;
+      color:var(--muted);
+    }
+    .error{color:var(--danger)}
+    .footer{
+      text-align:center;
+      color:var(--muted);
+      font-size:12px;
+      margin-top:16px;
+    }
+    @media (max-width:480px){
+      .row{grid-template-columns:120px 1fr}
+      .id strong{font-size:23px}
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="brand">
+      <h1>🌴 Data Bibit Sawit</h1>
+      <p>Database NDIS</p>
+    </div>
+
+    <section class="card" id="app">
+      <div class="msg">Memuat data bibit...</div>
+    </section>
+
+    <div class="footer">
+      Data bersumber dari <strong>sawit_ndis.csv</strong>
+    </div>
+  </main>
+
+<script>
+const CSV_URL = "./sawit_ndis.csv";
+
+function escapeHtml(v){
+  return String(v ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+function parseCSV(text){
+  const rows = [];
+  let row = [], cell = "", quoted = false;
+
+  for(let i=0; i<text.length; i++){
+    const ch = text[i];
+    const next = text[i+1];
+
+    if(ch === '"' && quoted && next === '"'){
+      cell += '"';
+      i++;
+    } else if(ch === '"'){
+      quoted = !quoted;
+    } else if(ch === ',' && !quoted){
+      row.push(cell);
+      cell = "";
+    } else if((ch === '\n' || ch === '\r') && !quoted){
+      if(ch === '\r' && next === '\n') i++;
+      row.push(cell);
+      if(row.some(v => v !== "")) rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += ch;
+    }
+  }
+  if(cell.length || row.length){
+    row.push(cell);
+    if(row.some(v => v !== "")) rows.push(row);
+  }
+
+  if(rows.length < 2) return [];
+  const headers = rows[0].map(h => h.trim());
+
+  return rows.slice(1).map(r => {
+    const obj = {};
+    headers.forEach((h, idx) => obj[h] = (r[idx] ?? "").trim());
+    return obj;
+  });
+}
+
+function fmtDate(v){
+  if(!v) return "-";
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : v;
+}
+
+function show(data){
+  const app = document.getElementById("app");
+  const coord = data.latitude && data.longitude
+    ? `${data.latitude}, ${data.longitude}`
+    : "-";
+
+  app.innerHTML = `
+    <div class="id">
+      <small>ID BIBIT</small>
+      <strong>${escapeHtml(data.id)}</strong>
+    </div>
+
+    <div class="row"><div class="label">Kode</div><div class="value">${escapeHtml(data.kode || "-")}</div></div>
+    <div class="row"><div class="label">Jenis</div><div class="value">${escapeHtml(data.jenis || "-")}</div></div>
+    <div class="row"><div class="label">Tanggal Semai</div><div class="value">${escapeHtml(fmtDate(data.tanggal_semai))}</div></div>
+    <div class="row"><div class="label">Tanggal Tanam</div><div class="value">${escapeHtml(fmtDate(data.tanggal_tanam))}</div></div>
+    <div class="row"><div class="label">Status</div><div class="value"><span class="status">${escapeHtml(data.status || "-")}</span></div></div>
+    <div class="row"><div class="label">Blok</div><div class="value">${escapeHtml(data.blok || "-")}</div></div>
+    <div class="row"><div class="label">Baris</div><div class="value">${escapeHtml(data.baris || "-")}</div></div>
+    <div class="row"><div class="label">Koordinat</div><div class="value">${escapeHtml(coord)}</div></div>
+    <div class="row"><div class="label">Keterangan</div><div class="value">${escapeHtml(data.keterangan || "-")}</div></div>
+  `;
+}
+
+async function init(){
+  const app = document.getElementById("app");
+  const id = new URLSearchParams(location.search).get("id");
+
+  if(!id){
+    app.innerHTML = `<div class="msg">QR tidak memuat ID bibit.<br>Contoh: <strong>?id=NDIS0001</strong></div>`;
+    return;
+  }
+
+  try{
+    const res = await fetch(`${CSV_URL}?v=${Date.now()}`, {cache:"no-store"});
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const text = await res.text();
+    const data = parseCSV(text);
+    const found = data.find(x => (x.id || "").toUpperCase() === id.trim().toUpperCase());
+
+    if(!found){
+      app.innerHTML = `<div class="msg error">Data <strong>${escapeHtml(id)}</strong> tidak ditemukan di sawit_ndis.csv.</div>`;
+      return;
+    }
+
+    show(found);
+  }catch(err){
+    app.innerHTML = `<div class="msg error">Gagal membaca sawit_ndis.csv.<br><small>${escapeHtml(err.message)}</small></div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
