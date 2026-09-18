@@ -786,7 +786,7 @@ function renderTableBody(data){
 
       <tr>
 
-        <td colspan="10" class="no-data">
+        <td colspan="11" class="no-data">
 
           Data tidak ditemukan.
 
@@ -801,7 +801,7 @@ function renderTableBody(data){
   }
 
 
-  tbody.innerHTML = data.map(item => {
+  tbody.innerHTML = data.map((item, index) => {
 
     const detailURL =
       `?id=${encodeURIComponent(item.id || "")}`;
@@ -811,68 +811,56 @@ function renderTableBody(data){
         ? `${item.latitude}, ${item.longitude}`
         : "-";
 
-
     return `
 
       <tr>
 
         <td>
+          ${index + 1}
+        </td>
 
+        <td>
           <a
             class="id-link"
             href="${detailURL}"
           >
-
             ${escapeHtml(item.id || "-")}
-
           </a>
-
         </td>
-
 
         <td>
           ${escapeHtml(item.kode || "-")}
         </td>
 
-
         <td>
           ${escapeHtml(item.jenis || "-")}
         </td>
-
 
         <td>
           ${escapeHtml(fmtDate(item.tanggal_semai))}
         </td>
 
-
         <td>
           ${escapeHtml(fmtDate(item.tanggal_tanam))}
         </td>
 
-
         <td>
-
           <span class="status">
             ${escapeHtml(item.status || "-")}
           </span>
-
         </td>
-
 
         <td>
           ${escapeHtml(item.blok || "-")}
         </td>
 
-
         <td>
           ${escapeHtml(item.baris || "-")}
         </td>
 
-
         <td>
           ${escapeHtml(coord)}
         </td>
-
 
         <td>
           ${escapeHtml(item.keterangan || "-")}
